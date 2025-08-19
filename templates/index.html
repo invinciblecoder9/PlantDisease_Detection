@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Disease Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Plant Disease Detector 🌿</h1>
+        <p class="subtitle">Upload a plant leaf image to find out if it's healthy or has a disease.</p>
+
+        <div class="upload-section">
+            <form id="upload-form" action="/predict" method="post" enctype="multipart/form-data">
+                <label for="file-upload" class="custom-file-upload">
+                    Choose Image
+                </label>
+                <input id="file-upload" type="file" name="file" accept="image/*" required>
+                <button type="submit" id="predict-button">Predict</button>
+            </form>
+            <p id="file-name-display"></p>
+        </div>
+
+        <div class="prediction-area">
+            <div id="image-preview-container">
+                <img id="image-preview" src="#" alt="Image Preview" style="display:none;">
+            </div>
+            <div id="loading" style="display:none;">
+                <div class="spinner"></div>
+                <p>Analyzing...</p>
+            </div>
+            <div id="result-box" style="display:none;">
+                <h2>Prediction:</h2>
+                <p id="prediction-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('file-upload').addEventListener('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
+            document.getElementById('file-name-display').textContent = fileName;
+            
+            // Display image preview
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgPreview = document.getElementById('image-preview');
+                    imgPreview.src = e.target.result;
+                    imgPreview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('image-preview').style.display = 'none';
+            }
+        });
+
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+
+            // Show loading spinner, hide previous results/preview
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('result-box').style.display = 'none';
+            document.getElementById('prediction-text').textContent = '';
+            // document.getElementById('image-preview').style.display = 'none'; // Keep preview during analysis or hide based on preference
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result-box').style.display = 'block';
+                if (data.error) {
+                    document.getElementById('prediction-text').textContent = 'Error: ' + data.error;
+                } else {
+                    document.getElementById('prediction-text').textContent = data.prediction;
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result-box').style.display = 'block';
+                document.getElementById('prediction-text').textContent = 'An error occurred during prediction.';
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
